@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.9';
 
 sub build {
     my $tmpl = shift;
@@ -172,7 +172,8 @@ sub buildPostfixTransportMap
 
     Kolab::LDAP::destroy($ldap);
     $transport->close;
-    
+
+    # FIXME: bad way of doing things...
     system("chown root.root $prefix/etc/postfix/*");
     system("$prefix/sbin/postmap $prefix/etc/postfix/transport");
 
@@ -359,54 +360,38 @@ __END__
 
 =head1 NAME
 
-Kolab::Conf - Perl extension for blah blah blah
-
-=head1 SYNOPSIS
-
-  use Kolab::Conf;
-  blah blah blah
+Kolab::Conf - Perl extension for Kolab template generation
 
 =head1 ABSTRACT
 
-  This should be the abstract for Kolab::Conf.
-  The abstract is used when making PPD (Perl Package Description) files.
-  If you don't want an ABSTRACT you should also edit Makefile.PL to
-  remove the ABSTRACT_FROM option.
-
-=head1 DESCRIPTION
-
-Stub documentation for Kolab::Conf, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
-
-=head2 EXPORT
-
-None by default.
-
-
-
-=head1 SEE ALSO
-
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+  Kolab::Conf handles the generation of template files, used by
+  kolabconf.
 
 =head1 AUTHOR
 
-root, E<lt>root@(none)E<gt>
+Stuart Bingë, E<lt>s.binge@codefusion.co.zaE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003 by root
+Copyright (c) 2003  Code Fusion cc
 
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+Portions based on work by the following people:
+
+  (c) 2003  Tassilo Erlewein  <tassilo.erlewein@erfrakon.de>
+  (c) 2003  Martin Konold     <martin.konold@erfrakon.de>
+  (c) 2003  Achim Frank       <achim.frank@erfrakon.de>
+
+This  program is free  software; you can redistribute  it and/or
+modify it  under the terms of the GNU  General Public License as
+published by the  Free Software Foundation; either version 2, or
+(at your option) any later version.
+
+This program is  distributed in the hope that it will be useful,
+but WITHOUT  ANY WARRANTY; without even the  implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You can view the  GNU General Public License, online, at the GNU
+Project's homepage; see <http://www.gnu.org/licenses/gpl.html>.
 
 =cut
