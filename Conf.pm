@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.91';
+our $VERSION = '0.92';
 
 sub build {
     my $tmpl = shift;
@@ -65,6 +65,7 @@ sub build {
     my $tmpfile = $prefix . '/etc/kolab/.tmp';
     copy($cfg, $oldcfg);
     chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $oldcfg);
+    chmod(0600, $oldcfg) if ($oldcfg =~ /openldap/);
 
     Kolab::log('T', "Creating new configuration file `$cfg' from template `$tmpl'");
 
