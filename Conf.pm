@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.96';
+our $VERSION = '0.97';
 
 sub build {
     my $tmpl = shift;
@@ -126,7 +126,7 @@ sub build {
         exit(1);
       } 
     } else { 
-      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0640))) {
+      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0644))) {
         Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
         exit(1);
       } 
