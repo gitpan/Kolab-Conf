@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.9';
+our $VERSION = '0.91';
 
 sub build {
     my $tmpl = shift;
@@ -96,7 +96,8 @@ sub build {
 
     move($tmpfile, $cfg);
     chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $cfg);
-
+    chmod(0600, $cfg) if ($cfg =~ /openldap/);
+    
     if (-f $oldcfg) {
         my $rc = `diff -q $cfg $oldcfg`;
         chomp($rc);
