@@ -54,33 +54,28 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.92';
+our $VERSION = '0.93';
 
 sub build {
     my $tmpl = shift;
     my $cfg = shift;
-    my $oldcfg = $cfg . '.old';
+    #my $oldcfg = $cfg . '.old';
     my $prefix = $Kolab::config{'prefix'};
 
-    my $tmpfile = $prefix . '/etc/kolab/.tmp';
-    copy($cfg, $oldcfg);
-    chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $oldcfg);
-    chmod(0600, $oldcfg) if ($oldcfg =~ /openldap/);
+    #my $tmpfile = $prefix . '/etc/kolab/.tmp';
+    #copy($cfg, $oldcfg);
+    #chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $oldcfg);
+    #chmod(0600, $oldcfg) if ($oldcfg =~ /openldap/);
 
-    Kolab::log('T', "Creating new configuration file `$cfg' from template `$tmpl'");
 
-    my $template;
-    if (!($template = IO::File->new($tmpl, 'r'))) {
+    my $TEMPLATE;
+    if (!($TEMPLATE = IO::File->new($tmpl, 'r'))) {
         Kolab::log('T', "Unable to open template file `$tmpl'", KOLAB_ERROR);
         exit(1);
     }
-    my $config;
-    if (!($config = IO::File->new($tmpfile, 'w+'))) {
-        Kolab::log('T', "Unable to open configuration file `$cfg'", KOLAB_ERROR);
-        exit(1);
-    }
+    my @tempfile = ();
 
-    while (<$template>) {
+    while (<$TEMPLATE>) {
         if (/\@{3}(\S+)\@{3}/) {
             if ($Kolab::config{$1}) {
                 s/\@{3}(\S+)\@{3}/$Kolab::config{$1}/g;
@@ -89,21 +84,31 @@ sub build {
                 s/\@{3}(\S+)\@{3}//g;
             }
         }
-        print $config $_;
+        push (@tempfile, $_);
     }
-
-    $template->close;
-    $config->close;
-
-    move($tmpfile, $cfg);
-    chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $cfg);
-    chmod(0600, $cfg) if ($cfg =~ /openldap/);
+    $TEMPLATE->close;
+ 
+    my $CONFIGFILE;
+    if (!($CONFIGFILE = IO::File->new($cfg, 'r'))) {
+        Kolab::log('T', "Unable to open config file `$cfg'", KOLAB_ERROR);
+        exit(1);
+    }
     
-    if (-f $oldcfg) {
-        my $rc = `diff -q $cfg $oldcfg`;
-        chomp($rc);
-        if ($rc) {
-            if ($cfg =~ /postfix/) {
+    my $configchanged = 0;
+    
+    foreach my $line (@tempfile) {
+      my $configline = <$CONFIGFILE>;
+      $configchanged = 1 if ($configline ne $line)
+    }
+    $CONFIGFILE->close;
+    undef $CONFIGFILE;
+
+    return 0 if ($configchanged ne 1);
+    
+    if ($configchanged) {
+            Kolab::log('T', "`$cfg' change detected.", KOLAB_DEBUG);
+            
+	    if ($cfg =~ /postfix/) {
                 $Kolab::haschanged{'postfix'} = 1;
             } elsif ($cfg =~ /saslauthd/) {
                 $Kolab::haschanged{'saslauthd'} = 1;
@@ -116,11 +121,26 @@ sub build {
             } elsif ($cfg =~ /imapd/) {
                 $Kolab::haschanged{'imapd'} = 1;
             }
-
-            Kolab::log('T', "`$cfg' change detected: $rc", KOLAB_DEBUG);
-        }
     }
-
+    Kolab::log('T', "Creating new configuration file `$cfg' from template `$tmpl'");
+    
+    truncate($cfg,0);
+    my $perms;
+    #if ($cfg =~ /openldap/) { $perms = 0600; } else { $perms = 0644; };
+    if ($cfg =~ /openldap/) { chmod(0600,$cfg); };
+    
+    my $NEWFILE;
+    if (!($NEWFILE = IO::File->new($cfg, 'w+', $perms))) {
+        Kolab::log('T', "Unable to open configuration file `$cfg'", KOLAB_ERROR);
+        exit(1);
+    } 
+    
+    foreach my $line (@tempfile) {
+       print $NEWFILE $line;
+    }
+    $NEWFILE->close;
+    chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $cfg);
+    
     Kolab::log('T', "Finished creating configuration file `$cfg'");
 }
 
