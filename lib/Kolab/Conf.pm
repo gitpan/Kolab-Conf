@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.97';
+our $VERSION = sprintf('%d.%02d', q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/);
 
 sub build {
     my $tmpl = shift;
@@ -80,27 +80,33 @@ sub build {
         push (@tempfile, $_);
     }
     $TEMPLATE->close;
- 
+
+    my $configchanged = 0;
     my $CONFIGFILE;
     if (!($CONFIGFILE = IO::File->new($cfg, 'r'))) {
         Kolab::log('T', "Unable to open config file `$cfg'", KOLAB_ERROR);
-        exit(1);
+        $configchanged = 1;	
+    } else {
+     
+       my @configfile = <$CONFIGFILE>;
+       $CONFIGFILE->close;
+       undef $CONFIGFILE;
+
+       if ($#configfile == $#tempfile) {
+          foreach my $line (@tempfile) {
+            my $configline = shift(@configfile);
+            $configchanged = 1 if ($configline ne $line)
+          }
+       } else {
+          $configchanged = 1;
+       }
     }
-    
-    my $configchanged = 0;
-    
-    foreach my $line (@tempfile) {
-      my $configline = <$CONFIGFILE>;
-      $configchanged = 1 if ($configline ne $line)
-    }
-    $CONFIGFILE->close;
-    undef $CONFIGFILE;
 
     return 0 if ($configchanged ne 1);
-    
+
     if ($configchanged) {
             Kolab::log('T', "`$cfg' change detected.", KOLAB_DEBUG);
-            
+
 	    if ($cfg =~ /postfix/) {
                 $Kolab::haschanged{'postfix'} = 1;
             } elsif ($cfg =~ /saslauthd/) {
@@ -116,22 +122,22 @@ sub build {
             }
     }
     Kolab::log('T', "Creating new configuration file `$cfg' from template `$tmpl'");
-    
+
     my $tmpfile = $prefix . '/etc/kolab/.tmp';
     unlink($tmpfile);
     my $NEWFILE;
-    if ($cfg =~ /openldap/) { 
+    if ($cfg =~ /openldap/) {
       if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0600))) {
         Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
         exit(1);
-      } 
-    } else { 
-      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0644))) {
+      }
+    } else {
+      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0640))) {
         Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
         exit(1);
-      } 
+      }
     }
-    
+
     foreach my $line (@tempfile) {
        print $NEWFILE $line;
     }
@@ -140,8 +146,8 @@ sub build {
     link($tmpfile,$cfg);
     unlink($tmpfile);
     chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $cfg);
-    
-    
+
+
     Kolab::log('T', "Finished creating configuration file `$cfg'");
 }
 
