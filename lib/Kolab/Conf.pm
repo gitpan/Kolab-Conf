@@ -54,7 +54,7 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = sprintf('%d.%02d', q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/);
+our $VERSION = sprintf('%d.%02d', q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/);
 
 sub build {
     my $tmpl = shift;
@@ -132,7 +132,7 @@ sub build {
         exit(1);
       }
     } else {
-      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0640))) {
+      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0644))) {
         Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
         exit(1);
       }
