@@ -54,19 +54,12 @@ our @EXPORT = qw(
 
 );
 
-our $VERSION = '0.93';
+our $VERSION = '0.96';
 
 sub build {
     my $tmpl = shift;
     my $cfg = shift;
-    #my $oldcfg = $cfg . '.old';
     my $prefix = $Kolab::config{'prefix'};
-
-    #my $tmpfile = $prefix . '/etc/kolab/.tmp';
-    #copy($cfg, $oldcfg);
-    #chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $oldcfg);
-    #chmod(0600, $oldcfg) if ($oldcfg =~ /openldap/);
-
 
     my $TEMPLATE;
     if (!($TEMPLATE = IO::File->new($tmpl, 'r'))) {
@@ -124,22 +117,30 @@ sub build {
     }
     Kolab::log('T', "Creating new configuration file `$cfg' from template `$tmpl'");
     
-    truncate($cfg,0);
-    my $perms;
-    #if ($cfg =~ /openldap/) { $perms = 0600; } else { $perms = 0644; };
-    if ($cfg =~ /openldap/) { chmod(0600,$cfg); };
-    
+    my $tmpfile = $prefix . '/etc/kolab/.tmp';
+    unlink($tmpfile);
     my $NEWFILE;
-    if (!($NEWFILE = IO::File->new($cfg, 'w+', $perms))) {
-        Kolab::log('T', "Unable to open configuration file `$cfg'", KOLAB_ERROR);
+    if ($cfg =~ /openldap/) { 
+      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0600))) {
+        Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
         exit(1);
-    } 
+      } 
+    } else { 
+      if (!($NEWFILE = IO::File->new($tmpfile, O_RDWR|O_CREAT|O_EXCL, 0640))) {
+        Kolab::log('T', "Unable to open configuration file `$tmpfile'", KOLAB_ERROR);
+        exit(1);
+      } 
+    }
     
     foreach my $line (@tempfile) {
        print $NEWFILE $line;
     }
     $NEWFILE->close;
+    unlink($cfg);
+    link($tmpfile,$cfg);
+    unlink($tmpfile);
     chown($Kolab::config{'kolab_uid'}, $Kolab::config{'kolab_gid'}, $cfg);
+    
     
     Kolab::log('T', "Finished creating configuration file `$cfg'");
 }
